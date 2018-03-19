@@ -1,0 +1,14 @@
+logging:
+  level:
+    org.springframework: WARN
+    de.tonyskulk: INFO
+  file: logs/application.log
+
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017
+      database: gaptrader
+  output:
+    ansi:
+      enabled: DETECT
