@@ -11,39 +11,119 @@
     /* Add space between Vega-Embed links  */
     .vega-actions a {
       margin-right: 5px;
+      display: none;
     }
   </style>
 </head>
 <body>
   <h1>Template for Embedding Vega-Lite Visualization</h1>
-  <!-- Container for the visualization -->
+  <!-- Container for the visuailzation -->
   <div id="vis"></div>
 
   <script>
+
+  var vlSpec = {
+      '$schema': 'https://vega.github.io/schema/vega-lite/v2.json',
+      'data': { 'name': 'gapsData' },
+      'width': 400,
+      'mark': 'line',
+      'encoding': {
+          'x': { 'field': 'x', 'type': 'quantitative' },
+          'y': { 'field': 'y', 'type': 'quantitative' }
+           }
+      
+  };
+  vegaEmbed('#vis', vlSpec).then(function(res) {
+     
+      function newGenerator() {
+          var counter = -1;
+          var previousY = [5];
+          return function () {
+              counter++;
+              var newVals = previousY.map(function (v, c) { return ({
+                  x: counter,
+                  y: v + Math.round(Math.random() * 10 - c * 3)
+              }); });
+              previousY = newVals.map(function (v) { return v.y; });
+              return newVals;
+          };
+      }
+
+      var valueGenerator = newGenerator();
+      var minimumX = -100;
+
+      var gapsSocket = new WebSocket("ws://localhost:8080/gaps");
+      gapsSocket.onmessage = function (event) {
+        console.log(event.data);
+        minimumX++;
+        
+        var changeSet = vega.changeset().insert(valueGenerator()).remove(function (t) { return t.x < minimumX; });
+        res.view.change('gapsData', changeSet).run();
+      }
+        
+/*        var insert = {timestamp: 1521500464, timegap: 0.5};
+        console.log(insert);
+        var changeSet = vega.changeset().insert(function() {
+          return insert;
+          //return {timestamp: event.data.timestamp, timegap: event.data.timegap};
+        }).remove(function (t) { 
+          return false;
+          // return new Date(t.timestamp).getTime() > minTimestamp; 
+        });
+        res.view.change('gapsData', changeSet).run();
+        minTimestamp = new Date(event.data.timestamp).getTime();*/
+      // window.setInterval(function () {
+      //     minimumX++;
+      //     var changeSet = vega.changeset().insert(valueGenerator()).remove(function (t) { return t.x < minimumX; });
+      //     res.view.change('gapsData', changeSet).run();
+      // }, 1000);
+  });
+
+  /*
   // Assign the specification to a local variable vlSpec.
   var vlSpec = {
     "$schema": "https://vega.github.io/schema/vega-lite/v2.json",
     "data": {
-      "values": [
-        {"a": "C", "b": 2}, {"a": "C", "b": 7}, {"a": "C", "b": 4},
-        {"a": "D", "b": 1}, {"a": "D", "b": 2}, {"a": "D", "b": 6},
-        {"a": "E", "b": 8}, {"a": "E", "b": 4}, {"a": "E", "b": 7}
-      ]
+      "name": "gapsData"
     },
     "mark": "bar",
     "encoding": {
-      "y": {"field": "a", "type": "nominal"},
-      "x": {
-        "aggregate": "average", "field": "b", "type": "quantitative",
+      "x": {"field": "timestamp", "type": "quantitative"},
+      "y": {
+        "field": "timegap", "type": "quantitative",
         "axis": {
-          "title": "Average of b"
+          "title": "timegap values"
         }
       }
     }
   };
 
   // Embed the visualization in the container with id `vis`
-  vegaEmbed("#vis", vlSpec);
+  vegaEmbed("#vis", vlSpec).then(function(res) {
+    var gapsSocket = new WebSocket("ws://localhost:8080/gaps");
+    
+    var minTimestamp = Date.now();
+    console.log(minTimestamp);
+    console.log(new Date(minTimestamp).toISOString());
+    console.log("Receiving websocket events...");
+    gapsSocket.onmessage = function (event) {
+      console.log(event.data);
+      var insert = {timestamp: 1521500464, timegap: 0.5};
+      console.log(insert);
+      
+      var changeSet = vega.changeset().insert(function() {
+        return insert;
+        //return {timestamp: event.data.timestamp, timegap: event.data.timegap};
+      }).remove(function (t) { 
+        return false;
+        // return new Date(t.timestamp).getTime() > minTimestamp; 
+      });
+      
+      res.view.change('gapsData', changeSet).run();
+      minTimestamp = new Date(event.data.timestamp).getTime();
+    }
+  });
+  */
   </script>
 </body>
 </html>
