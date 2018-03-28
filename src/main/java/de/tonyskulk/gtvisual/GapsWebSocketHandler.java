@@ -43,7 +43,11 @@ public class GapsWebSocketHandler implements WebSocketHandler {
 					} catch (JsonProcessingException e) {
 						throw Exceptions.propagate(e);
 					}
-				}).map(webSocketSession::textMessage).delayElements(Duration.ofMillis(1000));
+				})
+				.log()
+				.map(webSocketSession::textMessage)
+//				.delayElements(Duration.ofMillis(1000))
+				;
 		// .and(webSocketSession.receive().map(WebSocketMessage::getPayloadAsText).log());
 	}
 }

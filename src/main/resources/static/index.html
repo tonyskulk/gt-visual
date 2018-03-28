@@ -26,57 +26,57 @@
       '$schema': 'https://vega.github.io/schema/vega-lite/v2.json',
       'data': { 'name': 'gapsData' },
       'width': 400,
-      'mark': 'line',
+      'mark': 'bar',
       'encoding': {
-          'x': { 'field': 'x', 'type': 'quantitative' },
-          'y': { 'field': 'y', 'type': 'quantitative' }
+          'x': { 'field': 'x', 'type': 'temporal' },
+          'y': { 'field': 'y', 'type': 'quantitative', 'scale': { 'zero': false } }
            }
       
   };
   vegaEmbed('#vis', vlSpec).then(function(res) {
-     
+      var data = null;
+      var minX = [];
+      var counter = 0;
       function newGenerator() {
-          var counter = -1;
-          var previousY = [5];
           return function () {
-              counter++;
-              var newVals = previousY.map(function (v, c) { return ({
-                  x: counter,
-                  y: v + Math.round(Math.random() * 10 - c * 3)
-              }); });
-              previousY = newVals.map(function (v) { return v.y; });
-              return newVals;
+            var timestamp = data.timestamp;
+            console.log("timestamp: " + timestamp);
+            var gapValue = Object.keys(data.gapLevels)[0];
+            console.log("value: " + gapValue);
+            // if (counter % 100 === 0) {
+              minX.push(timestamp);
+              // if (minX.length > 10) {
+              //   minX.shift();
+              // }
+            // }
+            counter++;
+            return {
+              x: timestamp,
+              y: gapValue
+            }; 
           };
       }
 
       var valueGenerator = newGenerator();
-      var minimumX = -100;
 
       var gapsSocket = new WebSocket("ws://localhost:8080/gaps");
       gapsSocket.onmessage = function (event) {
-        console.log(event.data);
-        minimumX++;
-        
-        var changeSet = vega.changeset().insert(valueGenerator()).remove(function (t) { return t.x < minimumX; });
+        data = JSON.parse(event.data);
+        console.log("INCOMING EVENT...");
+        console.log(data);
+
+        var changeSet = vega.changeset()
+          .insert(valueGenerator())
+          .remove(function (t) { 
+            if (counter > 500) {
+              return t.x < minX.shift();
+            } else {
+              return false;
+            }
+          });
         res.view.change('gapsData', changeSet).run();
       }
         
-/*        var insert = {timestamp: 1521500464, timegap: 0.5};
-        console.log(insert);
-        var changeSet = vega.changeset().insert(function() {
-          return insert;
-          //return {timestamp: event.data.timestamp, timegap: event.data.timegap};
-        }).remove(function (t) { 
-          return false;
-          // return new Date(t.timestamp).getTime() > minTimestamp; 
-        });
-        res.view.change('gapsData', changeSet).run();
-        minTimestamp = new Date(event.data.timestamp).getTime();*/
-      // window.setInterval(function () {
-      //     minimumX++;
-      //     var changeSet = vega.changeset().insert(valueGenerator()).remove(function (t) { return t.x < minimumX; });
-      //     res.view.change('gapsData', changeSet).run();
-      // }, 1000);
   });
 
   /*
