@@ -25,12 +25,64 @@
   var vlSpec = {
       '$schema': 'https://vega.github.io/schema/vega-lite/v2.json',
       'data': { 'name': 'gapsData' },
-      'width': 400,
-      'mark': 'bar',
-      'encoding': {
-          'x': { 'field': 'x', 'type': 'temporal' },
-          'y': { 'field': 'y', 'type': 'quantitative', 'scale': { 'zero': false } }
-           }
+      'layer': [
+        {
+          'mark': 'bar',
+          'encoding': {
+            'x': { 
+              'field': 'timestamp', 
+              'type': 'temporal',
+              'timeUnit': 'milliseconds'
+            },
+            'y': { 
+              'field': 'gapValue', 
+              'type': 'quantitative',
+              'axis': {
+                'grid': false
+              }
+            }
+          }
+        },
+        {
+          'mark': 'line',
+          'encoding': {
+            'x': { 
+              'field': 'timestamp',
+              'type': 'temporal',
+              'timeUnit': 'milliseconds'
+            },
+            'y': { 
+              'field': 'volume', 
+              'type': 'quantitative', 
+              'axis': {
+                'grid': false
+              },
+              'scale': { 
+                'zero': false 
+              }
+            },
+            'color': {
+              'value': 'firebrick'
+            }
+          }
+        }
+      ],
+      'resolve': {
+        'scale': {
+          'y': 'independent'
+        }
+      },
+      'width': 800,
+      'height': 600
+      // 'facet': {
+      //     'row': {
+      //       'field': 'symbol',
+      //       'type': 'nominal'
+      //     }
+      //   },
+      // 'spec': {
+        // 'height': 400,
+      // }
       
   };
   vegaEmbed('#vis', vlSpec).then(function(res) {
@@ -42,17 +94,18 @@
             var timestamp = data.timestamp;
             console.log("timestamp: " + timestamp);
             var gapValue = Object.keys(data.gapLevels)[0];
-            console.log("value: " + gapValue);
-            // if (counter % 100 === 0) {
-              minX.push(timestamp);
-              // if (minX.length > 10) {
-              //   minX.shift();
-              // }
-            // }
+            console.log("gapValue: " + gapValue);
+            var symbol = data.baseCurrency + data.counterCurrency;
+            console.log("symbol: " + symbol);
+            var volume = data.gapLevels[gapValue].volume;
+            console.log("volume: " + volume);
+            minX.push(timestamp);
             counter++;
             return {
-              x: timestamp,
-              y: gapValue
+              timestamp: timestamp,
+              gapValue: gapValue,
+              symbol: symbol,
+              volume: volume
             }; 
           };
       }
