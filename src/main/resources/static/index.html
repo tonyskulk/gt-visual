@@ -16,7 +16,7 @@
   </style>
 </head>
 <body>
-  <h1>Template for Embedding Vega-Lite Visualization</h1>
+  <h1>Gaps visualization</h1>
   <!-- Container for the visuailzation -->
   <div id="vis"></div>
 
@@ -30,9 +30,11 @@
           'mark': 'bar',
           'encoding': {
             'x': { 
-              'field': 'timestamp', 
-              'type': 'temporal',
-              'timeUnit': 'milliseconds'
+              'field': 'counter', 
+              'type': 'ordinal',
+              // 'field': 'timestamp', 
+              // 'type': 'temporal',
+              // 'timeUnit': 'milliseconds'
             },
             'y': { 
               'field': 'gapValue', 
@@ -47,9 +49,11 @@
           'mark': 'line',
           'encoding': {
             'x': { 
-              'field': 'timestamp',
-              'type': 'temporal',
-              'timeUnit': 'milliseconds'
+              'field': 'counter', 
+              'type': 'ordinal',
+              // 'field': 'timestamp',
+              // 'type': 'temporal',
+              // 'timeUnit': 'milliseconds'
             },
             'y': { 
               'field': 'volume', 
@@ -86,45 +90,52 @@
       
   };
   vegaEmbed('#vis', vlSpec).then(function(res) {
-      var minX = [];
-      var counter = 0;
+      // var minX = [];
+      var minX = -1000;
+      var counter = -1;
       function newGenerator() {
-          return function (data) {
+        return function (datalist) {
+          return datalist.map(data => {
             var timestamp = data.timestamp;
-            console.log("timestamp: " + timestamp);
+            // console.log("timestamp: " + timestamp);
             var gapValue = Object.keys(data.gapLevels)[0];
-            console.log("gapValue: " + gapValue);
+            // console.log("gapValue: " + gapValue);
             var symbol = data.baseCurrency + data.counterCurrency;
-            console.log("symbol: " + symbol);
+            // console.log("symbol: " + symbol);
             var volume = data.gapLevels[gapValue].volume;
-            console.log("volume: " + volume);
-            minX.push(timestamp);
+            // console.log("volume: " + volume);
+            // minX.push(timestamp);
             counter++;
             return {
               timestamp: timestamp,
               gapValue: gapValue,
               symbol: symbol,
-              volume: volume
+              volume: volume,
+              counter: counter
             }; 
-          };
+          })
+        };
       }
 
       var valueGenerator = newGenerator();
 
       var gapsSocket = new WebSocket("ws://localhost:8080/gaps");
       gapsSocket.onmessage = function (event) {
+        minX = minX + 100;
         data = JSON.parse(event.data);
-        console.log("INCOMING EVENT...");
-        console.log(data);
+        // console.log("INCOMING EVENT...");
+        // console.log(data);
 
+        console.log("minX= " + minX);
+        console.log("counter= " + counter);
         var changeSet = vega.changeset()
           .insert(valueGenerator(data))
           .remove(function (t) { 
-            if (counter > 500) {
-              return t.x < minX.shift();
-            } else {
-              return false;
-            }
+            // if (counter > 1000) {
+              return t.counter < minX;
+            // } else {
+            //   return false;
+            // }
           });
         res.view.change('gapsData', changeSet).run();
       }

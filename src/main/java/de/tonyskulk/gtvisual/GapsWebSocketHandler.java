@@ -11,7 +11,6 @@ import org.springframework.web.reactive.socket.WebSocketSession;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import reactor.core.Exceptions;
@@ -37,6 +36,7 @@ public class GapsWebSocketHandler implements WebSocketHandler {
 
 	private Publisher<WebSocketMessage> output(WebSocketSession webSocketSession) {
 		return streamGapRepository.findAll()// .takeLast(10)
+				.buffer(100)
 				.map(streamGap -> {
 					try {
 						return objectMapper.writeValueAsString(streamGap);
@@ -44,11 +44,9 @@ public class GapsWebSocketHandler implements WebSocketHandler {
 						throw Exceptions.propagate(e);
 					}
 				})
-				.log()
 				.map(webSocketSession::textMessage)
-//				.buffer(1000)
-//				.delayElements(Duration.ofMillis(1000))
+				.delayElements(Duration.ofMillis(1000))
+				.log()
 				;
-		// .and(webSocketSession.receive().map(WebSocketMessage::getPayloadAsText).log());
 	}
 }
