@@ -46,6 +46,7 @@ public class GapsWebSocketHandler implements WebSocketHandler {
 				})
 				.log()
 				.map(webSocketSession::textMessage)
+//				.buffer(1000)
 //				.delayElements(Duration.ofMillis(1000))
 				;
 		// .and(webSocketSession.receive().map(WebSocketMessage::getPayloadAsText).log());

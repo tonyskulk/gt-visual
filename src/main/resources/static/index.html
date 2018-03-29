@@ -86,11 +86,10 @@
       
   };
   vegaEmbed('#vis', vlSpec).then(function(res) {
-      var data = null;
       var minX = [];
       var counter = 0;
       function newGenerator() {
-          return function () {
+          return function (data) {
             var timestamp = data.timestamp;
             console.log("timestamp: " + timestamp);
             var gapValue = Object.keys(data.gapLevels)[0];
@@ -119,7 +118,7 @@
         console.log(data);
 
         var changeSet = vega.changeset()
-          .insert(valueGenerator())
+          .insert(valueGenerator(data))
           .remove(function (t) { 
             if (counter > 500) {
               return t.x < minX.shift();
@@ -129,54 +128,7 @@
           });
         res.view.change('gapsData', changeSet).run();
       }
-        
   });
-
-  /*
-  // Assign the specification to a local variable vlSpec.
-  var vlSpec = {
-    "$schema": "https://vega.github.io/schema/vega-lite/v2.json",
-    "data": {
-      "name": "gapsData"
-    },
-    "mark": "bar",
-    "encoding": {
-      "x": {"field": "timestamp", "type": "quantitative"},
-      "y": {
-        "field": "timegap", "type": "quantitative",
-        "axis": {
-          "title": "timegap values"
-        }
-      }
-    }
-  };
-
-  // Embed the visualization in the container with id `vis`
-  vegaEmbed("#vis", vlSpec).then(function(res) {
-    var gapsSocket = new WebSocket("ws://localhost:8080/gaps");
-    
-    var minTimestamp = Date.now();
-    console.log(minTimestamp);
-    console.log(new Date(minTimestamp).toISOString());
-    console.log("Receiving websocket events...");
-    gapsSocket.onmessage = function (event) {
-      console.log(event.data);
-      var insert = {timestamp: 1521500464, timegap: 0.5};
-      console.log(insert);
-      
-      var changeSet = vega.changeset().insert(function() {
-        return insert;
-        //return {timestamp: event.data.timestamp, timegap: event.data.timegap};
-      }).remove(function (t) { 
-        return false;
-        // return new Date(t.timestamp).getTime() > minTimestamp; 
-      });
-      
-      res.view.change('gapsData', changeSet).run();
-      minTimestamp = new Date(event.data.timestamp).getTime();
-    }
-  });
-  */
   </script>
 </body>
 </html>
