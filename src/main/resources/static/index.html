@@ -42,6 +42,13 @@
               'axis': {
                 'grid': false
               }
+            },
+            'color': {
+              'condition': {
+                'test': 'datum.gapValue < 0',
+                'value': '#F29135'
+              },
+              'value': '#4F81B2'
             }
           }
         },
@@ -76,8 +83,8 @@
           'y': 'independent'
         }
       },
-      'width': 800,
-      'height': 600
+      'width': 1800,
+      'height': 800
       // 'facet': {
       //     'row': {
       //       'field': 'symbol',
@@ -104,6 +111,11 @@
             // console.log("symbol: " + symbol);
             var volume = data.gapLevels[gapValue].volume;
             // console.log("volume: " + volume);
+            var higherPriceExchange = data.higherPriceExchange;
+            if (higherPriceExchange === 'BitFinex') {
+              gapValue = -gapValue;
+            }
+            console.log(symbol);
             // minX.push(timestamp);
             counter++;
             return {
@@ -121,15 +133,16 @@
 
       var gapsSocket = new WebSocket("ws://localhost:8080/gaps");
       gapsSocket.onmessage = function (event) {
-        minX = minX + 100;
-        data = JSON.parse(event.data);
+        datalist = JSON.parse(event.data);
+        datalist = datalist.filter(data => data.baseCurrency + data.counterCurrency === 'ETHBTC')
+        minX = minX + Object.keys(datalist).length;
         // console.log("INCOMING EVENT...");
         // console.log(data);
 
         console.log("minX= " + minX);
         console.log("counter= " + counter);
         var changeSet = vega.changeset()
-          .insert(valueGenerator(data))
+          .insert(valueGenerator(datalist))
           .remove(function (t) { 
             // if (counter > 1000) {
               return t.counter < minX;

@@ -36,7 +36,7 @@ public class GapsWebSocketHandler implements WebSocketHandler {
 
 	private Publisher<WebSocketMessage> output(WebSocketSession webSocketSession) {
 		return streamGapRepository.findAll()// .takeLast(10)
-				.buffer(100)
+				.buffer(5)
 				.map(streamGap -> {
 					try {
 						return objectMapper.writeValueAsString(streamGap);
@@ -45,7 +45,7 @@ public class GapsWebSocketHandler implements WebSocketHandler {
 					}
 				})
 				.map(webSocketSession::textMessage)
-				.delayElements(Duration.ofMillis(1000))
+				.delayElements(Duration.ofMillis(50))
 				.log()
 				;
 	}
