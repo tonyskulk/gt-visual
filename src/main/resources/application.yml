@@ -12,3 +12,5 @@ spring:
   output:
     ansi:
       enabled: DETECT
+server:
+  port: 9000

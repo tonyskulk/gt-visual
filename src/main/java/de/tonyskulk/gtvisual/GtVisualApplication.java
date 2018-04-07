@@ -1,11 +1,11 @@
 package de.tonyskulk.gtvisual;
 
+import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
+import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-
 import javax.annotation.PostConstruct;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -13,6 +13,8 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
 import org.springframework.web.reactive.HandlerMapping;
+import org.springframework.web.reactive.function.server.RouterFunction;
+import org.springframework.web.reactive.function.server.ServerResponse;
 import org.springframework.web.reactive.handler.SimpleUrlHandlerMapping;
 import org.springframework.web.reactive.socket.WebSocketHandler;
 import org.springframework.web.reactive.socket.server.support.WebSocketHandlerAdapter;
@@ -20,49 +22,54 @@ import org.springframework.web.reactive.socket.server.support.WebSocketHandlerAd
 @SpringBootApplication
 public class GtVisualApplication {
 
-	@Bean
-	public WebSocketHandlerAdapter wsha() {
-		return new WebSocketHandlerAdapter();
-	}
+  @Bean
+  public WebSocketHandlerAdapter wsha() {
+    return new WebSocketHandlerAdapter();
+  }
 
-	@Bean
-	public CountDownLatch closeLatch() {
-		return new CountDownLatch(1);
-	}
+  @Bean
+  public CountDownLatch closeLatch() {
+    return new CountDownLatch(1);
+  }
 
-	@Bean
-	public HandlerMapping webSocketHandlerMapping() {
-		Map<String, WebSocketHandler> map = new HashMap<>();
-		map.put("/gaps", gapsWebSocketHandler);
+  @Bean
+  public HandlerMapping webSocketHandlerMapping() {
+    Map<String, WebSocketHandler> map = new HashMap<>();
+    map.put("/gaps", gapsWebSocketHandler);
 
-		SimpleUrlHandlerMapping handlerMapping = new SimpleUrlHandlerMapping();
-		handlerMapping.setOrder(1);
-		handlerMapping.setUrlMap(map);
-		return handlerMapping;
-	}
+    SimpleUrlHandlerMapping handlerMapping = new SimpleUrlHandlerMapping();
+    handlerMapping.setOrder(1);
+    handlerMapping.setUrlMap(map);
+    return handlerMapping;
+  }
 
-	@Autowired
-	private MappingMongoConverter mongoConverter;
+  @Bean
+  public RouterFunction<ServerResponse> monoRouterFunction(SymbolHandler symbolHandler) {
+    return route(GET("/api/symbols"), symbolHandler::listSymbols);
+  }
 
-	@Autowired
-	private GapsWebSocketHandler gapsWebSocketHandler;
+  @Autowired
+  private MappingMongoConverter mongoConverter;
 
-	// Converts . into a mongo friendly char
-	@PostConstruct
-	public void setUpMongoEscapeCharacterConversion() {
-		mongoConverter.setMapKeyDotReplacement(",");
-	}
+  @Autowired
+  private GapsWebSocketHandler gapsWebSocketHandler;
 
-	public static void main(String[] args) throws InterruptedException {
-		ConfigurableApplicationContext ctx = SpringApplication.run(GtVisualApplication.class, args);
+  // Converts . into a mongo friendly char
+  @PostConstruct
+  public void setUpMongoEscapeCharacterConversion() {
+    mongoConverter.setMapKeyDotReplacement(",");
+  }
 
-		final CountDownLatch closeLatch = ctx.getBean(CountDownLatch.class);
-		Runtime.getRuntime().addShutdownHook(new Thread() {
-			@Override
-			public void run() {
-				closeLatch.countDown();
-			}
-		});
-		closeLatch.await();
-	}
+  public static void main(String[] args) throws InterruptedException {
+    ConfigurableApplicationContext ctx = SpringApplication.run(GtVisualApplication.class, args);
+
+    final CountDownLatch closeLatch = ctx.getBean(CountDownLatch.class);
+    Runtime.getRuntime().addShutdownHook(new Thread() {
+      @Override
+      public void run() {
+        closeLatch.countDown();
+      }
+    });
+    closeLatch.await();
+  }
 }
