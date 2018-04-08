@@ -19,6 +19,8 @@ public class WebEndpointsConfig {
 
   @Autowired
   private GapsWebSocketHandler gapsWebSocketHandler;
+  @Autowired
+  private SymbolsWebSocketHandler symbolsWebSocketHandler;
 
   @Bean
   public WebSocketHandlerAdapter wsha() {
@@ -28,7 +30,8 @@ public class WebEndpointsConfig {
   @Bean
   public HandlerMapping webSocketHandlerMapping() {
     Map<String, WebSocketHandler> map = new HashMap<>();
-    map.put("/gaps", gapsWebSocketHandler);
+    map.put("/ws/gaps", gapsWebSocketHandler);
+    map.put("/ws/symbols", symbolsWebSocketHandler);
 
     SimpleUrlHandlerMapping handlerMapping = new SimpleUrlHandlerMapping();
     handlerMapping.setOrder(1);

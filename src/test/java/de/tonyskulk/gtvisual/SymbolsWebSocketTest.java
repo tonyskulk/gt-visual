@@ -15,7 +15,7 @@ import reactor.core.publisher.Mono;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
-public class GapsWebSocketTest {
+public class SymbolsWebSocketTest {
 
   @LocalServerPort
   int randomServerPort;
@@ -24,10 +24,10 @@ public class GapsWebSocketTest {
   public void streamGaps() throws InterruptedException {
     WebSocketClient webSocketClient = new ReactorNettyWebSocketClient();
     webSocketClient.execute(
-        URI.create("ws://localhost:" + randomServerPort + "/ws/gaps"),
+        URI.create("ws://localhost:" + randomServerPort + "/ws/symbols"),
         session -> session.send(Mono.just(session.textMessage("testMessage")))
-            .thenMany(session.receive().map(WebSocketMessage::getPayloadAsText).log().take(2))
-            .then()).blockOptional(Duration.ofSeconds(3));
+            .thenMany(session.receive().map(WebSocketMessage::getPayloadAsText).log())
+            .then()).blockOptional(Duration.ofSeconds(10));
   }
 
 }
