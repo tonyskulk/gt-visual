@@ -25,7 +25,7 @@ public class GapsWebSocketTest {
     WebSocketClient webSocketClient = new ReactorNettyWebSocketClient();
     webSocketClient.execute(
         URI.create("ws://localhost:" + randomServerPort + "/ws/gaps"),
-        session -> session.send(Mono.just(session.textMessage("testMessage")))
+        session -> session.send(Mono.just(session.textMessage("ETHBTC")))
             .thenMany(session.receive().map(WebSocketMessage::getPayloadAsText).log().take(2))
             .then()).blockOptional(Duration.ofSeconds(3));
   }

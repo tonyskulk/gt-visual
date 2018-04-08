@@ -27,19 +27,26 @@ public class GapsWebSocketHandler implements WebSocketHandler {
 
   @Override
   public Mono<Void> handle(WebSocketSession webSocketSession) {
-    System.out.println("enabling websocket session");
-    return webSocketSession.send(Mono.delay(Duration.ofMillis(1000)).thenMany(
-        output(webSocketSession)));
+    System.out.println("enabling websocket session for gaps...");
+
+    return webSocketSession.send(webSocketSession.receive()
+        .map(WebSocketMessage::getPayloadAsText)
+        .log()
+        .flatMap(message -> Mono.delay(Duration.ofMillis(1000))
+            .thenMany(output(webSocketSession, message))));
   }
 
-  private Publisher<WebSocketMessage> output(WebSocketSession webSocketSession) {
-    return streamGapRepository.findAll()// .takeLast(10)
-        .buffer(5).map(streamGap -> {
+  private Publisher<WebSocketMessage> output(WebSocketSession webSocketSession, String symbol) {
+//    return streamGapRepository.findAll()// .takeLast(10)
+    String basecurrency = symbol.substring(0, symbol.length() - 3);
+    String counterCurrency = symbol.substring(symbol.length() - 3);
+    return streamGapRepository.findByBaseCurrencyAndCounterCurrency(basecurrency, counterCurrency)
+        .buffer(100).map(streamGap -> {
           try {
             return objectMapper.writeValueAsString(streamGap);
           } catch (JsonProcessingException e) {
             throw Exceptions.propagate(e);
           }
-        }).map(webSocketSession::textMessage).delayElements(Duration.ofMillis(50)).log();
+        }).map(webSocketSession::textMessage).delayElements(Duration.ofMillis(1000)).log();
   }
 }
